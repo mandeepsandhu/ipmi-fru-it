@@ -29,4 +29,8 @@
 *.hex
 
 # Debug files
-*.dSYM/
+*.dSYM
+
+# Generated files
+*.d
+ipmi-fru-it

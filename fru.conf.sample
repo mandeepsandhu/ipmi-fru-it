@@ -1,0 +1,27 @@
+; Lines starting with ; are comments
+[iua]
+bin_file=/path/to/FRU.bin
+
+[cia]
+chassis_type=5
+part_number=IPMI
+serial_number=123456
+chassis_custom_1=1234ABCD
+chassis_custom_2=1234
+
+[bia]
+mfg_datetime=10213275
+manufacturer=MANUFACTURER
+product_name=PRODUCT_NAME
+serial_number=123456
+part_number=1234567890
+board_custom_1=ABCD
+
+[pia]
+manufacturer=MANUFACTURER
+product_name=PRODUCT_NAME
+part_number=1234567890
+version=1
+serial_number=123456
+asset_tag=ABCDEF
+product_custom_1=1234ABCD
