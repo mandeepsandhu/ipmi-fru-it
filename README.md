@@ -49,12 +49,12 @@ These map directly to the various FRU sections of the **FRU Information Storage 
 TBD.
 
 ## Known Issues
-* Any ASCII _value_ in the config file MUST be in CAPITALS.
+* Any ASCII _value_ in the config file MUST be in UPPER case.
 * Currently, there's no way to specify **binary or BCD data** for any of the FRU sections (`ipmi-fru-it` assumes all keys are ASCII text).
 
 ## TODO
-* Dump contents of a FRU data file (`-r` option).
+* Implement `-r` option - read contents of a FRU data file.
 * Support for MultiRecord Headers.
-* FRU File ID.
+* Support for FRU File ID.
 * ASCII values should be case-insensitive.
 * Find a way to specify BCD values.
