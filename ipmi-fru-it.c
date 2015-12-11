@@ -10,7 +10,7 @@
 #include "iniparser.h"
 #include "fru-defs.h"
 
-#define TOOL_VERSION "0.1"
+#define TOOL_VERSION "0.2"
 
 char usage[] =
 "\nUsage: %s [OPTIONS...]\n\n"
@@ -44,6 +44,8 @@ const char* PRODUCT_NAME    = "product_name";
 const char* VERSION         = "version";
 const char* ASSET_TAG       = "asset_tag";
 const char* FRU_FILE_ID     = "fru_file_id";
+
+int (*packer)(const char *, char **);
 
 inline uint8_t get_6bit_ascii(char c)
 {
@@ -87,6 +89,33 @@ char *get_key(const char *section, const char* key)
     strcat(concat, key);
 
     return concat;
+}
+
+int pack_ascii8(const char *str, char **raw_data)
+{
+    char *data;
+    struct fru_type_length *ftl;
+    uint8_t tl = TYPE_CODE_UNILATIN;
+    int len, size;
+
+    len = strlen(str);
+    size = 0;
+
+    uint8_t numbytes = len & 0x3f;
+
+    /* Set length. It can be a max of 64 bytes */
+    tl |= numbytes;
+
+    size = numbytes + sizeof(struct fru_type_length);
+
+    data = (char *) calloc(size, 1);
+    ftl = (struct fru_type_length *) data;
+    ftl->type_length = tl;
+
+    memcpy(ftl->data, str, len);
+
+    *raw_data = data;
+    return size;
 }
 
 int pack_ascii6(const char *str, char **raw_data)
@@ -231,7 +260,7 @@ int gen_cia(dictionary *ini, char **cia_data)
 
     str_data = iniparser_getstring(ini, get_key(CIA, PART_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        part_num_size = pack_ascii6(str_data, &part_num_packed);
+        part_num_size = (*packer)(str_data, &part_num_packed);
         size += part_num_size;
     } else {
         /* predfined fields with no data take 1 byte (for type/length) */
@@ -241,7 +270,7 @@ int gen_cia(dictionary *ini, char **cia_data)
 
     str_data = iniparser_getstring(ini, get_key(CIA, SERIAL_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        serial_num_size = pack_ascii6(str_data, &serial_num_packed);
+        serial_num_size = (*packer)(str_data, &serial_num_packed);
         size += serial_num_size;
     } else {
         serial_num_packed = NULL;
@@ -261,7 +290,7 @@ int gen_cia(dictionary *ini, char **cia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            size += pack_ascii6(str_data, &packed_ascii);
+            size += (*packer)(str_data, &packed_ascii);
         }
     }
 
@@ -304,7 +333,7 @@ int gen_cia(dictionary *ini, char **cia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            packed_size = pack_ascii6(str_data, &packed_ascii);
+            packed_size = (*packer)(str_data, &packed_ascii);
             memcpy(cia->tl + offset, packed_ascii, packed_size);
             offset += packed_size;
         }
@@ -370,7 +399,7 @@ int gen_bia(dictionary *ini, char **bia_data)
 
     str_data = iniparser_getstring(ini, get_key(BIA, MANUFACTURER), NULL);
     if (str_data && strlen(str_data)) {
-        mfg_size = pack_ascii6(str_data, &mfg_packed);
+        mfg_size = (*packer)(str_data, &mfg_packed);
         size += mfg_size;
     } else {
         mfg_packed = NULL;
@@ -379,7 +408,7 @@ int gen_bia(dictionary *ini, char **bia_data)
 
     str_data = iniparser_getstring(ini, get_key(BIA, PRODUCT_NAME), NULL);
     if (str_data && strlen(str_data)) {
-        name_size = pack_ascii6(str_data, &name_packed);
+        name_size = (*packer)(str_data, &name_packed);
         size += name_size;
     } else {
         name_packed = NULL;
@@ -388,7 +417,7 @@ int gen_bia(dictionary *ini, char **bia_data)
 
     str_data = iniparser_getstring(ini, get_key(BIA, SERIAL_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        serial_num_size = pack_ascii6(str_data, &serial_num_packed);
+        serial_num_size = (*packer)(str_data, &serial_num_packed);
         size += serial_num_size;
     } else {
         serial_num_packed = NULL;
@@ -397,7 +426,7 @@ int gen_bia(dictionary *ini, char **bia_data)
 
     str_data = iniparser_getstring(ini, get_key(BIA, PART_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        part_num_size = pack_ascii6(str_data, &part_num_packed);
+        part_num_size = (*packer)(str_data, &part_num_packed);
         size += part_num_size;
     } else {
         part_num_packed = NULL;
@@ -423,7 +452,7 @@ int gen_bia(dictionary *ini, char **bia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            size += pack_ascii6(str_data, &packed_ascii);
+            size += (*packer)(str_data, &packed_ascii);
         }
     }
 
@@ -490,7 +519,7 @@ int gen_bia(dictionary *ini, char **bia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            packed_size = pack_ascii6(str_data, &packed_ascii);
+            packed_size = (*packer)(str_data, &packed_ascii);
             memcpy(bia->tl + offset, packed_ascii, packed_size);
             offset += packed_size;
         }
@@ -551,7 +580,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, MANUFACTURER), NULL);
     if (str_data && strlen(str_data)) {
-        mfg_size = pack_ascii6(str_data, &mfg_packed);
+        mfg_size = (*packer)(str_data, &mfg_packed);
         size += mfg_size;
     } else {
         mfg_packed = NULL;
@@ -560,7 +589,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, PRODUCT_NAME), NULL);
     if (str_data && strlen(str_data)) {
-        name_size = pack_ascii6(str_data, &name_packed);
+        name_size = (*packer)(str_data, &name_packed);
         size += name_size;
     } else {
         /* predfined fields with no data take 1 byte (for type/length) */
@@ -570,7 +599,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, PART_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        part_num_size = pack_ascii6(str_data, &part_num_packed);
+        part_num_size = (*packer)(str_data, &part_num_packed);
         size += part_num_size;
     } else {
         part_num_packed = NULL;
@@ -579,7 +608,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, VERSION), NULL);
     if (str_data && strlen(str_data)) {
-        version_size = pack_ascii6(str_data, &version_packed);
+        version_size = (*packer)(str_data, &version_packed);
         size += version_size;
     } else {
         version_packed = NULL;
@@ -588,7 +617,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, SERIAL_NUMBER), NULL);
     if (str_data && strlen(str_data)) {
-        serial_num_size = pack_ascii6(str_data, &serial_num_packed);
+        serial_num_size = (*packer)(str_data, &serial_num_packed);
         size += serial_num_size;
     } else {
         /* predfined fields with no data take 1 byte (for type/length) */
@@ -598,7 +627,7 @@ int gen_pia(dictionary *ini, char **pia_data)
 
     str_data = iniparser_getstring(ini, get_key(PIA, ASSET_TAG), NULL);
     if (str_data && strlen(str_data)) {
-        asset_tag_size = pack_ascii6(str_data, &asset_tag_packed);
+        asset_tag_size = (*packer)(str_data, &asset_tag_packed);
         size += asset_tag_size;
     } else {
         /* predfined fields with no data take 1 byte (for type/length) */
@@ -627,7 +656,7 @@ int gen_pia(dictionary *ini, char **pia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            size += pack_ascii6(str_data, &packed_ascii);
+            size += (*packer)(str_data, &packed_ascii);
         }
     }
 
@@ -710,7 +739,7 @@ int gen_pia(dictionary *ini, char **pia_data)
         }
         str_data = iniparser_getstring(ini, key, NULL);
         if (str_data && strlen(str_data)) {
-            packed_size = pack_ascii6(str_data, &packed_ascii);
+            packed_size = (*packer)(str_data, &packed_ascii);
             memcpy(pia->tl + offset, packed_ascii, packed_size);
             offset += packed_size;
         }
@@ -842,14 +871,15 @@ int write_fru_data(const char*filename, void *data, int length)
 int main(int argc, char **argv)
 {
     char *fru_ini_file, *outfile, *data;
-    int c, length, max_size, result;
+    int c, length, max_size=0, result;
     dictionary *ini;
 
     /* supported cmdline options */
-    char options[] = "hvri:ws:c:o:";
+    char options[] = "hvri:aws:c:o:";
 
     fru_ini_file = outfile = data = NULL;
     ini = NULL;
+    packer = &pack_ascii6;
 
     while((c = getopt(argc, argv, options)) != -1) {
         switch(c) {
@@ -873,6 +903,10 @@ int main(int argc, char **argv)
             case 'o':
                 outfile = optarg;
                 break;
+            case 'a':
+                packer = &pack_ascii8;
+                break;
+
             case 'v':
                 fprintf(stdout, "\nipmi-fru-it version %s\n\n", TOOL_VERSION);
                 return 0;
@@ -901,7 +935,8 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (length > max_size) {
+    // only bother checking max_size if the parameter set it
+    if (max_size  && (length > max_size)) {
         fprintf(stderr, "\nError! FRU data length (%d bytes) exceeds maximum "
                 "file size (%d bytes)\n\n", length, max_size);
         exit(EXIT_FAILURE);
