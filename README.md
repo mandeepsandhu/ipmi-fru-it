@@ -1,4 +1,8 @@
 # ipmi-fru-it
+[![Github Issues](https://img.shields.io/github/issues/mandeepsandhu/ipmi-fru-it.svg)](https://github.com/mandeepsandhu/ipmi-fru-it/issues)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/mandeepsandhu/ipmi-fru-it.svg)](http://isitmaintained.com/project/mandeepsandhu/ipmi-fru-it
+"Average time to resolve an issue")
+
 *`ipmi-fru-it`* (pronounced ipmi-_fruit_) is a command-line utility for reading and writing IPMI FRU data.
 
 It follows the [IPMI Management FRU Information Storage Definition Specification](http://www.intel.com/content/dam/www/public/us/en/documents/product-briefs/platform-management-fru-document-rev-1-2-feb-2013.pdf) when reading/writing a FRU data file.
